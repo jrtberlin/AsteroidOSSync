@@ -54,6 +54,17 @@ public class PermissionsActivity extends MaterialIntroActivity {
             boolean externalStorageFragmentShown = (ContextCompat.checkSelfPermission(this,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED);
 
+            SlideFragment CalendarFragment = new SlideFragmentBuilder()
+                    .backgroundColor(R.color.colorintroslide3)
+                    .buttonsColor(R.color.colorintroslide3button)
+                    .neededPermissions(new String[]{Manifest.permission.WRITE_CALENDAR})
+                    .image(R.drawable.calendar_icon)
+                    .title(getString(R.string.intro_slide_calendar_title))
+                    .description(getString(R.string.intro_slide_calendar_subtitle))
+                    .build();
+            boolean calendarFragmentShown = (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED);
+
             SlideFragment localizationFragment = new SlideFragmentBuilder()
                     .backgroundColor(R.color.colorintroslide3)
                     .buttonsColor(R.color.colorintroslide3button)
@@ -77,6 +88,7 @@ public class PermissionsActivity extends MaterialIntroActivity {
                     notificationFragmentShown || batteryOptimFragmentShown) {
                 addSlide(welcomeFragment);
                 if (externalStorageFragmentShown) addSlide(externalStorageFragment);
+                if (calendarFragmentShown) addSlide(CalendarFragment);
                 if (localizationFragmentShown) addSlide(localizationFragment);
                 if (notificationFragmentShown) addSlide(notificationFragment);
                 if (batteryOptimFragmentShown) addSlide(batteryOptimFragment);

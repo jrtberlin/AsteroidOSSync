@@ -62,4 +62,6 @@
     <string name="title_activity_settings">Settings</string>
     <string name="switch_phone_notifications">Silence phone when connected </string>
     <string name="notification_silent_icon">notification silent icon</string>
+    <string name="intro_slide_calendar_title">Calendar</string>
+    <string name="intro_slide_calendar_subtitle">To sync your calendar we need access to it.</string>
 </resources>
