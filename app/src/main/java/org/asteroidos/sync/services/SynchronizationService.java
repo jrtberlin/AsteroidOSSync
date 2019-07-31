@@ -46,6 +46,7 @@ import com.idevicesinc.sweetblue.utils.Uuids;
 import org.asteroidos.sync.BuildConfig;
 import org.asteroidos.sync.MainActivity;
 import org.asteroidos.sync.R;
+import org.asteroidos.sync.ble.CalendarService;
 import org.asteroidos.sync.ble.MediaService;
 import org.asteroidos.sync.ble.NotificationService;
 import org.asteroidos.sync.ble.ScreenshotService;
@@ -87,6 +88,7 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
     private NotificationService mNotificationService;
     private MediaService mMediaService;
     private TimeService mTimeService;
+    private CalendarService mCalendarService;
 
     private SilentModeService silentModeService;
     private SharedPreferences mPrefs;
@@ -102,6 +104,7 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
         mScreenshotService = new ScreenshotService(getApplicationContext(), mDevice);
         mTimeService = new TimeService(getApplicationContext(), mDevice);
         silentModeService = new SilentModeService(getApplicationContext());
+        mCalendarService = new CalendarService(getApplicationContext(), mDevice);
 
         mDevice.connect();
     }
@@ -116,6 +119,7 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
         mTimeService.unsync();
         mDevice.disconnect();
         silentModeService.onDisconnect();
+        mCalendarService.unsync();
     }
 
     void handleReqBattery() {
@@ -144,6 +148,7 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
                 mNotificationService.unsync();
                 mMediaService.unsync();
                 mTimeService.unsync();
+                mCalendarService.unsync();
                 mDevice.disconnect();
                 mDevice.unbond();
             }
@@ -263,6 +268,7 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
             mMediaService = new MediaService(getApplicationContext(), mDevice);
             mScreenshotService = new ScreenshotService(getApplicationContext(), mDevice);
             mTimeService = new TimeService(getApplicationContext(), mDevice);
+            mCalendarService = new CalendarService(getApplicationContext(), mDevice);
 
             silentModeService = new SilentModeService(getApplicationContext());
 
@@ -351,6 +357,8 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
                 mMediaService.sync();
             if (mTimeService != null)
                 mTimeService.sync();
+            if (mCalendarService != null)
+                mCalendarService.sync();
             if (silentModeService != null)
                 silentModeService.onConnect();
         } else if (event.didEnter(BleDeviceState.DISCONNECTED)) {
@@ -370,6 +378,8 @@ public class SynchronizationService extends Service implements BleDevice.StateLi
                 mMediaService.unsync();
             if (mTimeService != null)
                 mTimeService.unsync();
+            if (mCalendarService != null)
+                mCalendarService.unsync();
             if (silentModeService != null)
                 silentModeService.onDisconnect();
         } else if(event.didEnter(BleDeviceState.CONNECTING)) {
