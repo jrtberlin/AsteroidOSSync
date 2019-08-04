@@ -57,13 +57,13 @@ public class PermissionsActivity extends MaterialIntroActivity {
             SlideFragment CalendarFragment = new SlideFragmentBuilder()
                     .backgroundColor(R.color.colorintroslide3)
                     .buttonsColor(R.color.colorintroslide3button)
-                    .neededPermissions(new String[]{Manifest.permission.WRITE_CALENDAR})
+                    .neededPermissions(new String[]{Manifest.permission.READ_CALENDAR})
                     .image(R.drawable.calendar_icon)
                     .title(getString(R.string.intro_slide_calendar_title))
                     .description(getString(R.string.intro_slide_calendar_subtitle))
                     .build();
             boolean calendarFragmentShown = (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.WRITE_CALENDAR) != PackageManager.PERMISSION_GRANTED);
+                    Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED);
 
             SlideFragment localizationFragment = new SlideFragmentBuilder()
                     .backgroundColor(R.color.colorintroslide3)

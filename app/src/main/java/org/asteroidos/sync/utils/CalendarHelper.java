@@ -76,7 +76,7 @@ public class CalendarHelper {
 
             // Create an event cursor to find all events in the calendar
             Cursor eventCursor = contentResolver.query(builder.build(),
-                    new String[]  { "title", "begin", "end", "allDay"}, "Calendars._id=" + id,
+                    new String[]  { "title", "begin", "end", "allDay"}, "Events.calendar_id=" + id,
                     null, "startDay ASC, startMinute ASC");
 
             System.out.println("eventCursor count="+eventCursor.getCount());
