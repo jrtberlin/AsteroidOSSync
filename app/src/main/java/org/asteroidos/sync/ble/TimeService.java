@@ -19,6 +19,7 @@ package org.asteroidos.sync.ble;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -26,15 +27,12 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.util.Log;
-
-import com.idevicesinc.sweetblue.BleDevice;
 
 import java.util.Calendar;
 import java.util.UUID;
 
 @SuppressWarnings( "deprecation" ) // Before upgrading to SweetBlue 3.0, we don't have an alternative to the deprecated ReadWriteListener
-public class TimeService implements BleDevice.ReadWriteListener, SharedPreferences.OnSharedPreferenceChangeListener {
+public class TimeService implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final UUID timeSetCharac = UUID.fromString("00005001-0000-0000-0000-00a57e401d05");
 
     public static final String PREFS_NAME = "TimePreference";
@@ -42,7 +40,7 @@ public class TimeService implements BleDevice.ReadWriteListener, SharedPreferenc
     public static final boolean PREFS_SYNC_TIME_DEFAULT = true;
     public static final String TIME_SYNC_INTENT = "org.asteroidos.sync.TIME_SYNC_REQUEST_LISTENER";
 
-    private BleDevice mDevice;
+    private BluetoothDevice mDevice;
     private Context mCtx;
 
     private SharedPreferences mTimeSyncSettings;
@@ -51,7 +49,7 @@ public class TimeService implements BleDevice.ReadWriteListener, SharedPreferenc
     private PendingIntent alarmPendingIntent;
     private AlarmManager alarmMgr;
 
-    public TimeService(Context ctx, BleDevice device) {
+    public TimeService(Context ctx, BluetoothDevice device) {
         mDevice = device;
         mCtx = ctx;
         mTimeSyncSettings = ctx.getSharedPreferences(PREFS_NAME, 0);
@@ -100,7 +98,7 @@ public class TimeService implements BleDevice.ReadWriteListener, SharedPreferenc
             data[3] = (byte)(c.get(Calendar.HOUR_OF_DAY));
             data[4] = (byte)(c.get(Calendar.MINUTE));
             data[5] = (byte)(c.get(Calendar.SECOND));
-            mDevice.write(timeSetCharac, data, TimeService.this);
+            //mDevice.write(timeSetCharac, data, TimeService.this); TODO: new lib call
         }
     }
 
@@ -111,12 +109,6 @@ public class TimeService implements BleDevice.ReadWriteListener, SharedPreferenc
         if (alarmMgr!= null) {
             alarmMgr.cancel(alarmPendingIntent);
         }
-    }
-
-    @Override
-    public void onEvent(ReadWriteEvent e) {
-        if(!e.wasSuccess())
-            Log.e("TimeService", e.status().toString());
     }
 
     class TimeSyncReqReceiver extends BroadcastReceiver {

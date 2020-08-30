@@ -21,34 +21,24 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.util.Log;
-
-import com.idevicesinc.sweetblue.BleDevice;
 
 import org.asteroidos.sync.NotificationPreferences;
+import org.asteroidos.sync.ble.messagetypes.Notification;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.UUID;
 
-@SuppressWarnings( "deprecation" ) // Before upgrading to SweetBlue 3.0, we don't have an alternative to the deprecated ReadWriteListener
-public class NotificationService implements BleDevice.ReadWriteListener {
-    private static final UUID notificationUpdateCharac   = UUID.fromString("00009001-0000-0000-0000-00a57e401d05");
-    private static final UUID notificationFeedbackCharac = UUID.fromString("00009002-0000-0000-0000-00a57e401d05");
+public class NotificationService {
 
     private Context mCtx;
-    private BleDevice mDevice;
 
     private NotificationReceiver mNReceiver;
 
-    public NotificationService(Context ctx, BleDevice device)
-    {
-        mDevice = device;
+    public NotificationService(Context ctx) {
         mCtx = ctx;
     }
 
-    public void sync() {
-        mDevice.enableNotify(notificationFeedbackCharac);
+    public final void sync() {
+        //mDevice.enableNotify(notificationFeedbackCharac);
 
         mNReceiver = new NotificationReceiver();
         IntentFilter filter = new IntentFilter();
@@ -60,22 +50,25 @@ public class NotificationService implements BleDevice.ReadWriteListener {
         mCtx.sendBroadcast(i);
     }
 
-    public void unsync() {
-        mDevice.disableNotify(notificationFeedbackCharac);
+    public final void unsync() {
+        //mDevice.disableNotify(notificationFeedbackCharac);
         try {
             mCtx.unregisterReceiver(mNReceiver);
         } catch (IllegalArgumentException ignored) {}
     }
 
+    /* Todo: new lib
     @Override
     public void onEvent(ReadWriteEvent e) {
         if(!e.wasSuccess())
             Log.e("NotificationService", e.status().toString());
     }
 
-    class NotificationReceiver extends BroadcastReceiver {
+     */
+
+    static class NotificationReceiver extends BroadcastReceiver {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public final void onReceive(Context context, Intent intent) {
             String event = intent.getStringExtra("event");
             if (Objects.equals(event, "posted")) {
                 String packageName = intent.getStringExtra("packageName");
@@ -107,32 +100,23 @@ public class NotificationService implements BleDevice.ReadWriteListener {
                 if(intent.hasExtra("vibration"))
                     vibration = intent.getStringExtra("vibration");
 
-                String xmlRequest = "<insert><id>" + id + "</id>";
-                if(!packageName.isEmpty())
-                    xmlRequest += "<pn>" + packageName + "</pn>";
-                if(!vibration.isEmpty())
-                    xmlRequest += "<vb>" + vibration + "</vb>";
-                if(!appName.isEmpty())
-                    xmlRequest += "<an>" + appName + "</an>";
-                if(!appIcon.isEmpty())
-                    xmlRequest += "<ai>" + appIcon + "</ai>";
-                if(!summary.isEmpty())
-                    xmlRequest += "<su>" + summary + "</su>";
-                if(!body.isEmpty())
-                    xmlRequest += "<bo>" + body + "</bo>";
-                xmlRequest += "</insert>";
+                byte[] data = new Notification(
+                        Notification.MsgType.POSTED,
+                        packageName,
+                        id,
+                        appName,
+                        appIcon,
+                        summary,
+                        body,
+                        vibration).toBytes();
 
-                byte[] data = xmlRequest.getBytes(StandardCharsets.UTF_8);
-                mDevice.write(notificationUpdateCharac, data, NotificationService.this);
+                //mDevice.write(notificationUpdateCharac, data, NotificationService.this);
             } else if (Objects.equals(event, "removed")) {
                 int id = intent.getIntExtra("id", 0);
 
-                String xmlRequest = "<removed>" +
-                        "<id>" + id + "</id>" +
-                        "</removed>";
 
-                byte[] data = xmlRequest.getBytes(StandardCharsets.UTF_8);
-                mDevice.write(notificationUpdateCharac, data, NotificationService.this);
+                byte[] data = new Notification(Notification.MsgType.REMOVED, id).toBytes();
+                //mDevice.write(notificationUpdateCharac, data, NotificationService.this);
             }
         }
     }

@@ -17,6 +17,7 @@
 
 package org.asteroidos.sync.ble;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -29,7 +30,6 @@ import android.media.session.PlaybackState;
 import androidx.annotation.NonNull;
 import android.util.Log;
 
-import com.idevicesinc.sweetblue.BleDevice;
 import com.maxmpz.poweramp.player.PowerampAPI;
 import com.maxmpz.poweramp.player.PowerampAPIHelper;
 
@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.UUID;
 
 @SuppressWarnings( "deprecation" ) // Before upgrading to SweetBlue 3.0, we don't have an alternative to the deprecated ReadWriteListener
-public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionManager.OnActiveSessionsChangedListener {
+public class MediaService implements MediaSessionManager.OnActiveSessionsChangedListener {
     private static final UUID mediaTitleCharac    = UUID.fromString("00007001-0000-0000-0000-00A57E401D05");
     private static final UUID mediaAlbumCharac    = UUID.fromString("00007002-0000-0000-0000-00A57E401D05");
     private static final UUID mediaArtistCharac   = UUID.fromString("00007003-0000-0000-0000-00A57E401D05");
@@ -57,13 +57,13 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
     public static final String PREFS_MEDIA_CONTROLLER_PACKAGE_DEFAULT = "default";
 
     private Context mCtx;
-    private BleDevice mDevice;
+    private BluetoothDevice mDevice;
     private SharedPreferences mSettings;
 
     private MediaController mMediaController = null;
     private MediaSessionManager mMediaSessionManager;
 
-    public MediaService(Context ctx, BleDevice device)
+    public MediaService(Context ctx, BluetoothDevice device)
     {
         mDevice = device;
         mCtx = ctx;
@@ -72,7 +72,7 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
     }
 
     public void sync() {
-        mDevice.enableNotify(mediaCommandsCharac, commandsListener);
+        //mDevice.enableNotify(mediaCommandsCharac, commandsListener);
         try {
             mMediaSessionManager = (MediaSessionManager) mCtx.getSystemService(Context.MEDIA_SESSION_SERVICE);
             List<MediaController> controllers = mMediaSessionManager.getActiveSessions(new ComponentName(mCtx, NLService.class));
@@ -84,7 +84,7 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
     }
 
     public void unsync() {
-        mDevice.disableNotify(mediaCommandsCharac);
+        //mDevice.disableNotify(mediaCommandsCharac);
 
         if(mMediaSessionManager != null)
             mMediaSessionManager.removeOnActiveSessionsChangedListener(this);
@@ -96,7 +96,7 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
         }
     }
 
-    private BleDevice.ReadWriteListener commandsListener = new BleDevice.ReadWriteListener() {
+/*    private BluetoothDevice.ReadWriteListener commandsListener = new BluetoothDevice().ReadWriteListener() {
         @Override
         public void onEvent(ReadWriteEvent e) {
             if(e.isNotification() && e.charUuid().equals(mediaCommandsCharac)) {
@@ -153,7 +153,7 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
     public void onEvent(ReadWriteEvent e) {
         if(!e.wasSuccess())
             Log.e("MediaService", e.status().toString());
-    }
+    }*/
 
     /**
      * Callback for the MediaController.
@@ -193,8 +193,8 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
         public void onMetadataChanged(MediaMetadata metadata) {
             super.onMetadataChanged(metadata);
 
-            if (metadata != null) {
-                mDevice.write(mediaArtistCharac,
+            //if (metadata != null) { Todo: Adapt to new lib
+                /*mDevice.write(mediaArtistCharac,
                         getTextAsBytes(metadata, MediaMetadata.METADATA_KEY_ARTIST),
                         MediaService.this);
 
@@ -204,16 +204,16 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
 
                 mDevice.write(mediaTitleCharac,
                         getTextAsBytes(metadata, MediaMetadata.METADATA_KEY_TITLE),
-                        MediaService.this);
+                        MediaService.this);*/
             }
-        }
+        //}
 
         @Override
         public void onPlaybackStateChanged(@NonNull PlaybackState state) {
             super.onPlaybackStateChanged(state);
             byte[] data = new byte[1];
             data[0] = (byte)(state.getState() == PlaybackState.STATE_PLAYING ?  1 : 0);
-            mDevice.write(mediaPlayingCharac, data, MediaService.this);
+            //mDevice.write(mediaPlayingCharac, data, MediaService.this); Todo: new lib
         }
 
         @Override
@@ -250,9 +250,9 @@ public class MediaService implements BleDevice.ReadWriteListener,  MediaSessionM
             }
         } else {
             byte[] data = new byte[]{0};
-            mDevice.write(mediaArtistCharac, data, MediaService.this);
-            mDevice.write(mediaAlbumCharac, data, MediaService.this);
-            mDevice.write(mediaTitleCharac, data, MediaService.this);
+            //mDevice.write(mediaArtistCharac, data, MediaService.this);
+            //mDevice.write(mediaAlbumCharac, data, MediaService.this);
+            //mDevice.write(mediaTitleCharac, data, MediaService.this);
         }
     }
 }

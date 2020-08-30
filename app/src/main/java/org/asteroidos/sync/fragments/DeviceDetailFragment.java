@@ -27,6 +27,8 @@ import androidx.annotation.Nullable;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.fragment.app.Fragment;
 import androidx.cardview.widget.CardView;
+
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -65,6 +67,11 @@ public class DeviceDetailFragment extends Fragment {
 
     private int mStatus = SynchronizationService.STATUS_DISCONNECTED;
     private int mBatteryPercentage = 100;
+    private DeviceDetailFragment.OnDefaultDeviceUnselectedListener mDeviceListener;
+    private DeviceDetailFragment.OnConnectRequestedListener mConnectListener;
+    private DeviceDetailFragment.OnAppSettingsClickedListener mAppSettingsListener;
+    private DeviceDetailFragment.OnLocationSettingsClickedListener mLocationSettingsListener;
+    private DeviceDetailFragment.OnUpdateListener mUpdateListener;
 
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup parent, @Nullable Bundle savedInstanceState) {
@@ -100,7 +107,7 @@ public class DeviceDetailFragment extends Fragment {
 
         mDisconnectedText = view.findViewById(R.id.info_disconnected);
         mBatteryText = view.findViewById(R.id.info_battery);
-        mBatteryText.setText(String.valueOf(mBatteryPercentage)+" %");
+        mBatteryText.setText(mBatteryPercentage +" %");
 
         mConnectedContent = view.findViewById(R.id.device_connected_content);
         mDisconnectedPlaceholder = view.findViewById(R.id.device_disconnected_placeholder);
@@ -241,7 +248,7 @@ public class DeviceDetailFragment extends Fragment {
     @SuppressLint("SetTextI18n")
     public void setBatteryPercentage(int percentage) {
         try {
-            mBatteryText.setText(String.valueOf(percentage)+" %");
+            mBatteryText.setText(percentage +" %");
             mBatteryPercentage = percentage;
         } catch(IllegalStateException ignore) {}
     }
@@ -255,29 +262,6 @@ public class DeviceDetailFragment extends Fragment {
         if(mStatus == SynchronizationService.STATUS_DISCONNECTED)
             mDisconnectedText.setText(R.string.disconnected);
     }
-
-    /* Notifies MainActivity when a device unpairing is requested */
-    public interface OnDefaultDeviceUnselectedListener {
-        void onDefaultDeviceUnselected();
-    }
-    public interface OnAppSettingsClickedListener {
-        void onAppSettingsClicked();
-    }
-    public interface OnLocationSettingsClickedListener {
-        void onLocationSettingsClicked();
-    }
-    public interface OnConnectRequestedListener {
-        void onConnectRequested();
-        void onDisconnectRequested();
-    }
-    public interface OnUpdateListener {
-        void onUpdateRequested();
-    }
-    private DeviceDetailFragment.OnDefaultDeviceUnselectedListener mDeviceListener;
-    private DeviceDetailFragment.OnConnectRequestedListener mConnectListener;
-    private DeviceDetailFragment.OnAppSettingsClickedListener mAppSettingsListener;
-    private DeviceDetailFragment.OnLocationSettingsClickedListener mLocationSettingsListener;
-    private DeviceDetailFragment.OnUpdateListener mUpdateListener;
 
     @Override
     public void onAttach(Context context) {
@@ -311,5 +295,23 @@ public class DeviceDetailFragment extends Fragment {
         else
             throw new ClassCastException(context.toString()
                     + " does not implement DeviceDetailFragment.onUpdateListener");
+    }
+    /* Notifies MainActivity when a device unpairing is requested */
+    public interface OnDefaultDeviceUnselectedListener {
+        void onDefaultDeviceUnselected();
+    }
+    public interface OnAppSettingsClickedListener {
+        void onAppSettingsClicked();
+    }
+    public interface OnLocationSettingsClickedListener {
+        void onLocationSettingsClicked();
+    }
+    public interface OnConnectRequestedListener {
+        void onConnectRequested();
+        void onDisconnectRequested();
+    }
+
+    public interface OnUpdateListener {
+        void onUpdateRequested();
     }
 }

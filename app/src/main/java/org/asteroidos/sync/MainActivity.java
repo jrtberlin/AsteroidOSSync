@@ -1,5 +1,7 @@
 package org.asteroidos.sync;
 
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.le.BluetoothLeScanner;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -11,8 +13,10 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.ParcelUuid;
 import android.os.RemoteException;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -22,12 +26,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.view.MenuItem;
 
-import com.idevicesinc.sweetblue.BleManager;
-import com.idevicesinc.sweetblue.BleManagerState;
-import com.idevicesinc.sweetblue.ManagerStateListener;
-import com.idevicesinc.sweetblue.utils.BluetoothEnabler;
-import com.idevicesinc.sweetblue.utils.Interval;
-
+import org.asteroidos.sync.ble.AsteroidBleManager;
 import org.asteroidos.sync.fragments.AppListFragment;
 import org.asteroidos.sync.fragments.DeviceDetailFragment;
 import org.asteroidos.sync.fragments.DeviceListFragment;
@@ -35,18 +34,27 @@ import org.asteroidos.sync.fragments.PositionPickerFragment;
 import org.asteroidos.sync.services.SynchronizationService;
 import org.asteroidos.sync.utils.AppInfo;
 import org.asteroidos.sync.utils.AppInfoHelper;
+import org.asteroidos.sync.utils.AsteroidUUIDS;
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import static com.idevicesinc.sweetblue.BleManager.get;
+import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat;
+import no.nordicsemi.android.support.v18.scanner.ScanCallback;
+import no.nordicsemi.android.support.v18.scanner.ScanFilter;
+import no.nordicsemi.android.support.v18.scanner.ScanResult;
+import no.nordicsemi.android.support.v18.scanner.ScanSettings;
 
-@SuppressWarnings( "deprecation" ) // Before upgrading to SweetBlue 3.0, we don't have an alternative to the deprecated StateListener
+import static android.os.ParcelUuid.fromString;
+
 public class MainActivity extends AppCompatActivity implements DeviceListFragment.OnDefaultDeviceSelectedListener,
         DeviceListFragment.OnScanRequestedListener, DeviceDetailFragment.OnDefaultDeviceUnselectedListener,
-        DeviceDetailFragment.OnConnectRequestedListener, BleManager.DiscoveryListener,
+        DeviceDetailFragment.OnConnectRequestedListener,
         DeviceDetailFragment.OnAppSettingsClickedListener, DeviceDetailFragment.OnLocationSettingsClickedListener,
         DeviceDetailFragment.OnUpdateListener {
-    private BleManager mBleMngr;
     private DeviceListFragment mListFragment;
     private DeviceDetailFragment mDetailFragment;
     private Fragment mPreviousFragment;
@@ -60,13 +68,23 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
     public static final String PREFS_NAME = "MainPreferences";
     public static final String PREFS_DEFAULT_MAC_ADDR = "defaultMacAddress";
     public static final String PREFS_DEFAULT_LOC_NAME = "defaultLocalName";
+    public ParcelUuid asteroidUUID = fromString(AsteroidUUIDS.SERVICE_UUID.toString());
 
+    private BluetoothLeScannerCompat scanner;
+    ScanSettings settings;
+    List<ScanFilter> filters;
     private SharedPreferences mPrefs;
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public final void onMessageEvent(AsteroidBleManager.BatteryLevelEvent event) {handleBatteryPercentage(event.battery);};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EventBus.getDefault().register(this);
         setContentView(R.layout.activity_main);
+
+        scanner = BluetoothLeScannerCompat.getScanner();
 
         mPrefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String defaultDevMacAddr = mPrefs.getString(PREFS_DEFAULT_MAC_ADDR, "");
@@ -78,25 +96,17 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
         });
         appInfoRetrieval.start();
 
+        settings = new ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build();
+        filters = new ArrayList<>();
+        filters.add(new ScanFilter.Builder().setServiceUuid(asteroidUUID).build());
+
+        scanner.startScan(filters, settings, scanCallback);
+
         /* Start and/or attach to the Synchronization Service */
         mSyncServiceIntent = new Intent(this, SynchronizationService.class);
         startService(mSyncServiceIntent);
-
-        BluetoothEnabler.start(this);
-        mBleMngr = get(getApplication());
-        mBleMngr.setListener_State(new ManagerStateListener() {
-            @Override
-            public void onEvent(BleManager.StateListener.StateEvent event) {
-                if(event.didExit(BleManagerState.SCANNING)) {
-                    if(mListFragment != null)        mListFragment.scanningStopped();
-                    else if(mDetailFragment != null) mDetailFragment.scanningStopped();
-                } else if(event.didEnter(BleManagerState.SCANNING)) {
-                    if(mListFragment != null)        mListFragment.scanningStarted();
-                    else if(mDetailFragment != null) mDetailFragment.scanningStarted();
-                }
-            }
-        });
-        mBleMngr.setListener_Discovery(this);
 
         if (savedInstanceState == null) {
             Fragment f;
@@ -114,16 +124,32 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
         }
     }
 
+    public ScanCallback scanCallback = new ScanCallback() {
+        @Override
+        public void onScanResult(int callbackType, @NonNull ScanResult result) {
+            super.onScanResult(callbackType, result);
+
+            if (mListFragment == null) return;
+            mListFragment.deviceDiscovered(result.getDevice());
+            if(BuildConfig.DEBUG)
+                System.out.println("SCAN RESULT:" + result.getDevice().toString() + " Name:" + result.getDevice().getName());
+            ParcelUuid[] arr = result.getDevice().getUuids();
+        }
+    };
+
     @Override
     public void onDestroy() {
         super.onDestroy();
+        EventBus.getDefault().unregister(this);
         if(mStatus != SynchronizationService.STATUS_CONNECTED)
             stopService(mSyncServiceIntent);
     }
 
     /* Fragments switching */
     @Override
-    public void onDefaultDeviceSelected(String macAddress) {
+    public void onDefaultDeviceSelected(BluetoothDevice mDevice) {
+        scanner.stopScan(scanCallback);
+        mListFragment.scanningStopped();
         mDetailFragment = new DeviceDetailFragment();
 
         getSupportFragmentManager()
@@ -133,13 +159,14 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
 
         try {
             Message msg = Message.obtain(null, SynchronizationService.MSG_SET_DEVICE);
-            msg.obj = macAddress;
+            msg.obj = mDevice;
             msg.replyTo = mDeviceDetailMessenger;
             mSyncServiceMessenger.send(msg);
         } catch (RemoteException ignored) {}
 
         onConnectRequested();
 
+        EventBus.getDefault().register(this);
         mListFragment = null;
     }
 
@@ -153,13 +180,13 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
                 .commit();
 
         try {
-            Message msg = Message.obtain(null, SynchronizationService.MSG_SET_DEVICE);
-            msg.obj = "";
+            Message msg = Message.obtain(null, SynchronizationService.MSG_UNSET_DEVICE);
             msg.replyTo = mDeviceDetailMessenger;
             mSyncServiceMessenger.send(msg);
         } catch (RemoteException ignored) {}
 
         mDetailFragment = null;
+        EventBus.getDefault().unregister(this);
         setTitle(R.string.app_name);
     }
 
@@ -188,6 +215,8 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
 
     @Override
     public void onConnectRequested() {
+        if(scanner != null)
+            scanner.stopScan(scanCallback);
         try {
             Message msg = Message.obtain(null, SynchronizationService.MSG_CONNECT);
             msg.replyTo = mDeviceDetailMessenger;
@@ -321,6 +350,7 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
                     mActivity.handleSetStatus(msg.arg1);
                     break;
                 case SynchronizationService.MSG_SET_BATTERY_PERCENTAGE:
+                    System.out.println("Got battery percentage by callback: " + msg.arg1);
                     mActivity.handleBatteryPercentage(msg.arg1);
                     break;
                 default:
@@ -330,38 +360,26 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
     }
 
     @Override
-    public void onEvent(BleManager.DiscoveryListener.DiscoveryEvent event) {
-        if (mListFragment == null) return;
-
-        if (event.was(BleManager.DiscoveryListener.LifeCycle.DISCOVERED))
-            mListFragment.deviceDiscovered(event.device());
-        else if (event.was(BleManager.DiscoveryListener.LifeCycle.UNDISCOVERED))
-            mListFragment.deviceUndiscovered(event.device());
-    }
-
-    @Override
     public void onScanRequested() {
-        mBleMngr.turnOn();
-        mBleMngr.undiscoverAll();
-        mBleMngr.startScan(Interval.secs(10.0));
+        //scanner.flushPendingScanResults(scanCallback); Todo: fix crash on subsequent call
+        scanner.stopScan(scanCallback);
+        scanner.startScan(filters, settings, scanCallback);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mBleMngr.onResume();
         bindService(mSyncServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mBleMngr.onPause();
         unbindService(mConnection);
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         getDelegate().onConfigurationChanged(newConfig);
         int currentNightMode = newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK;
