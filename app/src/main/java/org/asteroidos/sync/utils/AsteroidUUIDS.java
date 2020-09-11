@@ -12,8 +12,8 @@ public class AsteroidUUIDS {
     public static final UUID BATTERY_UUID               = UUID.fromString("00002A19-0000-1000-8000-00805F9B34FB");
 
     //ScreenshotService
-    public static final UUID screenshotRequestCharac    = UUID.fromString("00006001-0000-0000-0000-00A57E401D05");
-    public static final UUID screenshotContentCharac    = UUID.fromString("00006002-0000-0000-0000-00A57E401D05");
+    public static final UUID SCREENSHOT_REQUEST         = UUID.fromString("00006001-0000-0000-0000-00A57E401D05");
+    public static final UUID SCREENSHOT_CONTENT         = UUID.fromString("00006002-0000-0000-0000-00A57E401D05");
 
     //MediaService
     public static final UUID mediaTitleCharac           = UUID.fromString("00007001-0000-0000-0000-00A57E401D05");
@@ -30,6 +30,7 @@ public class AsteroidUUIDS {
     public static final UUID weatherMaxTempsCharac      = UUID.fromString("00008004-0000-0000-0000-00A57E401D05");
 
     //Notification Service
+    public static final UUID NOTIFICATION_SERVICE_UUID  = UUID.fromString("00009071-0000-0000-0000-00A57E401D05");
     public static final UUID notificationUpdateCharac   = UUID.fromString("00009001-0000-0000-0000-00A57E401D05");
     public static final UUID notificationFeedbackCharac = UUID.fromString("00009002-0000-0000-0000-00A57E401D05");
 }

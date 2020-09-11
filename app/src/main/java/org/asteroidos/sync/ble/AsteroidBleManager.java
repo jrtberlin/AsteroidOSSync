@@ -9,8 +9,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.asteroidos.sync.ble.messagetypes.EventBusMsg;
+import org.asteroidos.sync.ble.messagetypes.Notification;
 import org.asteroidos.sync.utils.AsteroidUUIDS;
 import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
 
 import java.util.Objects;
 
@@ -22,9 +25,11 @@ public class AsteroidBleManager extends BleManager {
 
     @Nullable
     public BluetoothGattCharacteristic batteryCharacteristic;
+    private BluetoothGattCharacteristic notificationUpdateCharacteristic;
 
     public AsteroidBleManager(@NonNull final Context context) {
         super(context);
+        EventBus.getDefault().register(this);
     }
 
     @NonNull
@@ -34,7 +39,7 @@ public class AsteroidBleManager extends BleManager {
     }
 
     @Override
-    public void log(final int priority, @NonNull final String message) {
+    public final void log(final int priority, @NonNull final String message) {
         if (BuildConfig.DEBUG || priority == Log.ERROR) {
             Log.println(priority, "MyBleManager", message);
         }
@@ -44,11 +49,33 @@ public class AsteroidBleManager extends BleManager {
         cancelQueue();
     }
 
+
+    @Override
+    protected final void finalize() throws Throwable {
+        super.finalize();
+        EventBus.getDefault().unregister(this);
+    }
+
+    @Subscribe
+    public final void onMessageEvent(EventBusMsg eventBusMsg) {
+        if (eventBusMsg.messageType == EventBusMsg.MessageType.STRING) {
+            System.out.println("FROM MANAGER:" + eventBusMsg.messageObject);
+        } else if (eventBusMsg.messageType == EventBusMsg.MessageType.BATTERY) {
+            BatteryLevelEvent batteryLevelEvent = (BatteryLevelEvent) eventBusMsg.messageObject;
+            System.out.println("BATTERY FROM MANAGER:" + batteryLevelEvent.battery);
+        } else if (eventBusMsg.messageType == EventBusMsg.MessageType.NOTIFICATION) {
+            Notification notification = (Notification) eventBusMsg.messageObject;
+            System.out.println("Notification FROM MANAGER:" + notification.toXML());
+        }
+        //writeCharacteristic(notificationUpdateCharacteristic, event.toBytes());
+    }
+
     public final void setBatteryLevel(Data data) {
         System.out.println("DEBUG BATTERY: " + data.getByte(0) + "%");
         BatteryLevelEvent batteryLevelEvent = new BatteryLevelEvent();
         batteryLevelEvent.battery = Objects.requireNonNull(data.getByte(0)).intValue();
-        EventBus.getDefault().post(batteryLevelEvent);
+        EventBusMsg eventBusMsg = new EventBusMsg(EventBusMsg.MessageType.BATTERY, batteryLevelEvent);
+        EventBus.getDefault().post(eventBusMsg);
     }
 
     public static class BatteryLevelEvent {
@@ -59,18 +86,30 @@ public class AsteroidBleManager extends BleManager {
 
         @Override
         public final boolean isRequiredServiceSupported(@NonNull final BluetoothGatt gatt) {
-            final BluetoothGattService service = gatt.getService(AsteroidUUIDS.BATTERY_SERVICE_UUID);
+            final BluetoothGattService batteryService = gatt.getService(AsteroidUUIDS.BATTERY_SERVICE_UUID);
+            final BluetoothGattService notificationService = gatt.getService(AsteroidUUIDS.NOTIFICATION_SERVICE_UUID);
+
+            boolean supported = true;
+
             boolean notify = false;
-            if (service != null) {
-                batteryCharacteristic = service.getCharacteristic(AsteroidUUIDS.BATTERY_UUID);
+            if (batteryService != null) {
+                batteryCharacteristic = batteryService.getCharacteristic(AsteroidUUIDS.BATTERY_UUID);
 
                 if (batteryCharacteristic != null) {
                     final int properties = batteryCharacteristic.getProperties();
                     notify = (properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0;
                 }
             }
+            supported = (batteryCharacteristic != null && notify);
+
+            if (notificationService != null) {
+                notificationUpdateCharacteristic = notificationService.getCharacteristic(AsteroidUUIDS.notificationUpdateCharac);
+
+            }
+            supported &= (notificationUpdateCharacteristic != null && notify);
+
             // Return true if all required services have been found
-            return (batteryCharacteristic != null && notify);
+            return supported;
         }
 
         @Override
@@ -91,6 +130,7 @@ public class AsteroidBleManager extends BleManager {
             setNotificationCallback(batteryCharacteristic).with(((device, data) -> setBatteryLevel(data)));
             readCharacteristic(batteryCharacteristic).with(((device, data) -> setBatteryLevel(data)));
             enableNotifications(batteryCharacteristic).enqueue();
+
         }
 
         @Override

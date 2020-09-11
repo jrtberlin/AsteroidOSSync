@@ -23,7 +23,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 
 import org.asteroidos.sync.NotificationPreferences;
+import org.asteroidos.sync.ble.messagetypes.EventBusMsg;
 import org.asteroidos.sync.ble.messagetypes.Notification;
+import org.greenrobot.eventbus.EventBus;
 
 import java.util.Objects;
 
@@ -54,17 +56,9 @@ public class NotificationService {
         //mDevice.disableNotify(notificationFeedbackCharac);
         try {
             mCtx.unregisterReceiver(mNReceiver);
-        } catch (IllegalArgumentException ignored) {}
+        } catch (IllegalArgumentException ignored) {
+        }
     }
-
-    /* Todo: new lib
-    @Override
-    public void onEvent(ReadWriteEvent e) {
-        if(!e.wasSuccess())
-            Log.e("NotificationService", e.status().toString());
-    }
-
-     */
 
     static class NotificationReceiver extends BroadcastReceiver {
         @Override
@@ -92,15 +86,15 @@ public class NotificationService {
                     vibration = "normal";
                 else if (notificationOption == NotificationPreferences.NotificationOption.STRONG_VIBRATION)
                     vibration = "strong";
-                else if(notificationOption == NotificationPreferences.NotificationOption.RINGTONE_VIBRATION)
+                else if (notificationOption == NotificationPreferences.NotificationOption.RINGTONE_VIBRATION)
                     vibration = "ringtone";
                 else
                     throw new IllegalArgumentException("Not all options handled");
 
-                if(intent.hasExtra("vibration"))
+                if (intent.hasExtra("vibration"))
                     vibration = intent.getStringExtra("vibration");
 
-                byte[] data = new Notification(
+                Notification notification = new Notification(
                         Notification.MsgType.POSTED,
                         packageName,
                         id,
@@ -108,14 +102,16 @@ public class NotificationService {
                         appIcon,
                         summary,
                         body,
-                        vibration).toBytes();
+                        vibration);
 
+                EventBus.getDefault().post(new EventBusMsg(EventBusMsg.MessageType.NOTIFICATION, notification));
                 //mDevice.write(notificationUpdateCharac, data, NotificationService.this);
             } else if (Objects.equals(event, "removed")) {
                 int id = intent.getIntExtra("id", 0);
 
 
-                byte[] data = new Notification(Notification.MsgType.REMOVED, id).toBytes();
+                Notification notification = new Notification(Notification.MsgType.REMOVED, id);
+                EventBus.getDefault().post(new EventBusMsg(EventBusMsg.MessageType.NOTIFICATION, notification));
                 //mDevice.write(notificationUpdateCharac, data, NotificationService.this);
             }
         }

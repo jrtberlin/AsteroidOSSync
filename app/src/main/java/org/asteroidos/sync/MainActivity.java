@@ -1,7 +1,6 @@
 package org.asteroidos.sync;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.BluetoothLeScanner;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.MenuItem;
 
 import org.asteroidos.sync.ble.AsteroidBleManager;
+import org.asteroidos.sync.ble.messagetypes.EventBusMsg;
 import org.asteroidos.sync.fragments.AppListFragment;
 import org.asteroidos.sync.fragments.DeviceDetailFragment;
 import org.asteroidos.sync.fragments.DeviceListFragment;
@@ -76,7 +76,10 @@ public class MainActivity extends AppCompatActivity implements DeviceListFragmen
     private SharedPreferences mPrefs;
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    public final void onMessageEvent(AsteroidBleManager.BatteryLevelEvent event) {handleBatteryPercentage(event.battery);};
+    public final void onMessageEvent(EventBusMsg eventBusMsg) {
+        if (eventBusMsg.messageType == EventBusMsg.MessageType.BATTERY)
+            handleBatteryPercentage(((AsteroidBleManager.BatteryLevelEvent) eventBusMsg.messageObject).battery);
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

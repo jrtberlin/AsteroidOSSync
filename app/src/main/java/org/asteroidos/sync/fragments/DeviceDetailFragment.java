@@ -142,12 +142,7 @@ public class DeviceDetailFragment extends Fragment {
         });
 
         CardView screenshotCard = view.findViewById(R.id.card_view3);
-        screenshotCard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getActivity().sendBroadcast(new  Intent("org.asteroidos.sync.SCREENSHOT_REQUEST_LISTENER"));
-            }
-        });
+        screenshotCard.setOnClickListener(view1 -> getActivity().sendBroadcast(new  Intent("org.asteroidos.sync.SCREENSHOT_REQUEST_LISTENER")));
 
         CardView notifSettCard = view.findViewById(R.id.card_view4);
         notifSettCard.setOnClickListener(new View.OnClickListener() {

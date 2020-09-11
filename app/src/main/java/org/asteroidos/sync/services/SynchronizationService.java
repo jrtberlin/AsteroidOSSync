@@ -82,7 +82,7 @@ public class SynchronizationService extends Service implements ConnectionObserve
     private SilentModeService silentModeService;
     private SharedPreferences mPrefs;
 
-    void handleConnect() {
+    final void handleConnect() {
         if (mBleMngr == null) return;
         if (mState == STATUS_CONNECTED || mState == STATUS_CONNECTING) return;
 
@@ -110,6 +110,7 @@ public class SynchronizationService extends Service implements ConnectionObserve
                 .enqueue();
 
 
+        mNotificationService = new NotificationService(getApplicationContext());
         /*mWeatherService = new WeatherService(getApplicationContext(), mDevice);
         mNotificationService = new NotificationService(getApplicationContext(), mDevice);
         mMediaService = new MediaService(getApplicationContext(), mDevice);
