@@ -93,6 +93,11 @@ public class PermissionsActivity extends MaterialIntroActivity {
                     (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED);
 
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                PermissionAutoRevokeSlide permissionAutoRevokeSlide = new PermissionAutoRevokeSlide();
+                permissionAutoRevokeSlide.setContext(this);
+            }
+
             if (externalStorageFragmentShown || localizationFragmentShown ||
                     notificationFragmentShown || batteryOptimFragmentShown || phoneStateFragmentShown) {
                 addSlide(welcomeFragment);
@@ -262,6 +267,51 @@ public class PermissionsActivity extends MaterialIntroActivity {
         @Override
         public boolean canMoveFurther() {
             return false;
+        }
+    }
+
+    static public class PermissionAutoRevokeSlide extends SlideFragment {
+        Context mCtx;
+
+        @Nullable
+        @Override
+        public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+            Bundle bundle = new Bundle();
+            bundle.putInt("background_color", R.color.colorintroslide5);
+            bundle.putInt("buttons_color", R.color.colorintroslide5button);
+            bundle.putInt("image", R.drawable.ic_baseline_assignment_late);
+            bundle.putString("title", mCtx.getString(R.string.intro_autorevokeslide_title));
+            bundle.putString("description", mCtx.getString(R.string.intro_autorevokeslide_subtitle));
+            setArguments(bundle);
+
+            return super.onCreateView(inflater, container, savedInstanceState);
+        }
+
+        public void setContext(Context ctx) {
+            mCtx = ctx;
+        }
+
+        @Override
+        public boolean hasAnyPermissionsToGrant() {
+
+            return false;
+        }
+
+        @Override
+        public void askForPermissions() {
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Intent intent = new Intent();
+                String packageName = mCtx.getPackageName();
+                intent.setAction(Intent.ACTION_AUTO_REVOKE_PERMISSIONS);
+                intent.setData(Uri.parse("package:" + packageName));
+                getActivity().startActivity(intent);
+
+            }
+        }
+
+        @Override
+        public boolean canMoveFurther() {
+            return !hasAnyPermissionsToGrant();
         }
     }
 }

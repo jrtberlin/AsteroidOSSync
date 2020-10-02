@@ -69,4 +69,6 @@
     <string name="intro_phonestateslide_title">Phone &amp; Contacts</string>
     <string name="show_calls_on_watch">Display incoming calls</string>
     <string name="dialer">Dialer</string>
+    <string name="intro_autorevokeslide_subtitle">To disable permission auto-revoke on Android 11.</string>
+    <string name="intro_autorevokeslide_title">Permission Auto-Revoke</string>
 </resources>
