@@ -27,11 +27,11 @@ public class BleCharacteristic {
         return this.writeableCharacteristic;
     }
 
-    public final boolean isReadableCharactersitic(){
+    public final boolean isReadableCharactersitic() {
         return !this.writeableCharacteristic;
     }
 
-    public void printCharacteristicInfo() {
+    public final void printCharacteristicInfo() {
         if (BuildConfig.DEBUG) {
             System.out.println("BLE Characteristic " + getCharacteristicName() + "\n\tUUID: "
                     + getCharacteristicUUID().toString() +

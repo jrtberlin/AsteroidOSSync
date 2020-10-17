@@ -29,7 +29,7 @@ public class BleService {
     }
 
     public final void addCharacteristic(BleCharacteristic bleCharacteristic) {
-        int size = 0;
+        int size = 1;
         if (this.serviceCharacteristics != null) {
             size = this.serviceCharacteristics.length + 1;
         }
