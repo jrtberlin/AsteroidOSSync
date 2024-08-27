@@ -25,6 +25,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -98,7 +99,11 @@ public class WeatherService implements IConnectivityService {
             IntentFilter filter = new IntentFilter();
             filter.addAction(WEATHER_SYNC_INTENT);
 
-            mCtx.registerReceiver(mSReceiver, filter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mCtx.registerReceiver(mSReceiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                mCtx.registerReceiver(mSReceiver, filter);
+            }
             // Fire update intent every 30 Minutes to update Weather
             Intent alarmIntent = new Intent(WEATHER_SYNC_INTENT);
             mAlarmPendingIntent = PendingIntent.getBroadcast(mCtx, 0, alarmIntent, PendingIntent.FLAG_IMMUTABLE);

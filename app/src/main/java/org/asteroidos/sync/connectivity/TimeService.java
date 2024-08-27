@@ -25,8 +25,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
+
+import androidx.annotation.RequiresApi;
 
 import org.asteroidos.sync.asteroid.IAsteroidDevice;
 import org.asteroidos.sync.utils.AsteroidUUIDS;
@@ -71,7 +74,11 @@ public class TimeService implements IConnectivityService, SharedPreferences.OnSh
             filter.addAction(TIME_SYNC_INTENT);
             filter.addAction(Intent.ACTION_TIME_CHANGED);
             filter.addAction(Intent.ACTION_TIMEZONE_CHANGED);
-            mCtx.registerReceiver(mSReceiver, filter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mCtx.registerReceiver(mSReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                mCtx.registerReceiver(mSReceiver, filter);
+            }
 
             // register an alarm to sync the time once a day
             Intent alarmIntent = new Intent(TIME_SYNC_INTENT);

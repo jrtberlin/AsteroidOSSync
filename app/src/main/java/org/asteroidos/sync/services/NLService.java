@@ -51,7 +51,11 @@ public class NLService extends NotificationListenerService {
         nlServiceReceiver = new NLServiceReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction("org.asteroidos.sync.NOTIFICATION_LISTENER_SERVICE");
-        registerReceiver(nlServiceReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(nlServiceReceiver, filter, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(nlServiceReceiver, filter);
+        }
 
         iconFromPackage = new Hashtable<>();
         iconFromPackage.put("code.name.monkey.retromusic", "ios-musical-notes");

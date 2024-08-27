@@ -22,6 +22,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
+
+import androidx.annotation.RequiresApi;
 
 import org.asteroidos.sync.NotificationPreferences;
 import org.asteroidos.sync.asteroid.IAsteroidDevice;
@@ -50,7 +53,11 @@ public class NotificationService implements IConnectivityService {
             IntentFilter filter = new IntentFilter();
             filter.addAction("org.asteroidos.sync.NOTIFICATION_LISTENER");
             mNReceiver = new NotificationReceiver();
-            mCtx.registerReceiver(mNReceiver, filter);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mCtx.registerReceiver(mNReceiver, filter, Context.RECEIVER_EXPORTED);
+            } else {
+                mCtx.registerReceiver(mNReceiver, filter);
+            }
 
             Intent i = new Intent("org.asteroidos.sync.NOTIFICATION_LISTENER_SERVICE");
             i.putExtra("command", "refresh");
