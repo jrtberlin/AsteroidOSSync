@@ -25,6 +25,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
 
     <uses-feature
         android:name="android.hardware.bluetooth_le"
@@ -87,7 +88,8 @@
             android:name=".services.SynchronizationService"
             android:enabled="true"
             android:exported="false"
-            android:label="SynchronizationService" />
+            android:label="SynchronizationService"
+            android:foregroundServiceType="connectedDevice"/>
 
         <receiver android:name=".services.AutostartService"
             android:exported="true">
