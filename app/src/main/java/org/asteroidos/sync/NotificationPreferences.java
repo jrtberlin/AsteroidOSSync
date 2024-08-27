@@ -48,15 +48,15 @@ public class NotificationPreferences {
         }
 
         public static NotificationOption fromInt(int x) {
-            switch (x) {
-                case 0: return DEFAULT;
-                case 1: return NO_NOTIFICATIONS;
-                case 2: return SILENT_NOTIFICATION;
-                case 3: return NORMAL_VIBRATION;
-                case 4: return STRONG_VIBRATION;
-                case 5: return RINGTONE_VIBRATION;
-            }
-            throw new IllegalArgumentException("No such NotificationOption: " + x);
+            return switch (x) {
+                case 0 -> DEFAULT;
+                case 1 -> NO_NOTIFICATIONS;
+                case 2 -> SILENT_NOTIFICATION;
+                case 3 -> NORMAL_VIBRATION;
+                case 4 -> STRONG_VIBRATION;
+                case 5 -> RINGTONE_VIBRATION;
+                default -> throw new IllegalArgumentException("No such NotificationOption: " + x);
+            };
         }
     }
 
