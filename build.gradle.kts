@@ -9,6 +9,7 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.21")
     }
 }
+val buildToolsVersion by extra("34.0.0")
 
 allprojects {
     repositories {
